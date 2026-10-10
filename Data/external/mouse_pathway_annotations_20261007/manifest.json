@@ -1,0 +1,30 @@
+{
+  "downloaded_at_utc": "2026-10-07T14:56:19.391379+00:00",
+  "sources": {
+    "MOUSE-mod.gaf.gz": {
+      "url": "https://current.geneontology.org/annotations/gaf/MOUSE-mod.gaf.gz",
+      "bytes": 10579993,
+      "sha256": "6cbefce3a2efd9862f102a2732e923fde525c8fa59a3e5ce22e8178c3ebb0093"
+    },
+    "go-basic.obo": {
+      "url": "https://current.geneontology.org/ontology/go-basic.obo",
+      "bytes": 32227785,
+      "sha256": "b08d45b268b8c24ccb2513dbbbc7d4df9f6521c099b413f79eb31e06e0fa3bcc"
+    },
+    "MGI_Gene_Model_Coord.rpt": {
+      "url": "https://www.informatics.jax.org/downloads/reports/MGI_Gene_Model_Coord.rpt",
+      "bytes": 16231489,
+      "sha256": "b39dc2554b7dc9120454793f6ba195a1eb841db368be6b394d4f08586e89098f"
+    },
+    "kegg_mouse_pathways.tsv": {
+      "url": "https://rest.kegg.jp/list/pathway/mmu",
+      "bytes": 24062,
+      "sha256": "016cb5a5361600aba63a4e9a0538c0d458d4f8d21fed848922bbf0ace19a8f80"
+    },
+    "kegg_mouse_pathway_genes.tsv": {
+      "url": "https://rest.kegg.jp/link/mmu/pathway",
+      "bytes": 1025914,
+      "sha256": "abd3255ec76555856fb92ed723ea2e589fabc262ddd04bb9f6c777f629f6ab9b"
+    }
+  }
+}

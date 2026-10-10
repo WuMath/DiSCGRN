@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Combine existing E6 and native tree GRN scores on matched long systems.
+
+The static tree methods output one network per system. That same network is
+scored against each true stage and the two average-precision values are
+averaged, as specified by the manuscript's stage-network metric. This script
+does not refit any method or use test truth to select parameters.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from ctcpgrn.paths import results_root
+
+
+METHOD_NAMES = {
+    "DiSCGRN": "DiSCGRN",
+    "EDISON": "EDISON",
+    "genie3_global": "GENIE3",
+    "grnboost2_global": "GRNBoost2",
+}
+
+
+def main() -> None:
+    root = results_root()
+    out = root / "native_grn_benchmark"
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = pd.read_csv(root / "tree_grn_long" / "input_manifest.tsv", sep="\t")
+    assert len(manifest) == 60
+    assert manifest.groupby(["T", "changed"]).size().eq(15).all()
+    e6 = pd.read_csv(root / "revision_e6" / "e6_all_systems.tsv", sep="\t")
+    external = e6[
+        e6.method.isin(("DiSCGRN", "EDISON"))
+        & e6["T"].isin((25, 41))
+    ][["seed", "T", "changed", "method", "network_aupr", "status"]].copy()
+    assert len(external) == 120 and external.status.eq("ok").all()
+    external = external.drop(columns="status")
+    tree_rows = []
+    for item in manifest.itertuples(index=False):
+        for method in ("genie3_global", "grnboost2_global"):
+            stages = pd.read_csv(root / "tree_grn_long" / f"system_{item.seed}_{method}.tsv", sep="\t")
+            assert len(stages) == 2 and set(stages.regime) == {1, 2}
+            tree_rows.append({"seed": item.seed, "T": item.T, "changed": bool(item.changed),
+                              "method": method, "network_aupr": stages.stage_aupr.mean()})
+    tree = pd.DataFrame(tree_rows)
+    assert len(tree) == 120
+    rows = pd.concat([external, tree], ignore_index=True)
+    rows.method = rows.method.map(METHOD_NAMES)
+    assert rows.method.notna().all() and np.isfinite(rows.network_aupr).all()
+    assert rows.groupby(["T", "changed", "method"]).size().eq(15).all()
+    for length in (25, 41):
+        for changed in (False, True):
+            by_method = rows[rows["T"].eq(length) & rows.changed.eq(changed)].groupby("method").seed.apply(set)
+            assert all(seeds == by_method.iloc[0] for seeds in by_method)
+    rows.sort_values(["T", "changed", "seed", "method"]).to_csv(out / "system_aupr.tsv", sep="\t", index=False)
+    summary = rows.groupby(["T", "changed", "method"]).network_aupr.agg(["count", "mean", "std"]).reset_index()
+    summary.to_csv(out / "summary.tsv", sep="\t", index=False)
+    rng = np.random.default_rng(20261007)
+    paired = []
+    for length in (25, 41):
+        for changed in (False, True):
+            wide = rows[rows["T"].eq(length) & rows.changed.eq(changed)].pivot(
+                index="seed", columns="method", values="network_aupr")
+            for method in ("EDISON", "GENIE3", "GRNBoost2"):
+                difference = (wide["DiSCGRN"] - wide[method]).to_numpy()
+                draws = difference[rng.integers(0, len(difference), (5000, len(difference)))].mean(axis=1)
+                low, high = np.quantile(draws, [0.025, 0.975])
+                paired.append({
+                    "T": length, "changed": changed, "comparison": f"DiSCGRN_vs_{method}",
+                    "n_systems": len(difference), "mean_difference": difference.mean(),
+                    "ci_low": low, "ci_high": high,
+                })
+    result = pd.DataFrame(paired)
+    result.to_csv(out / "paired_bootstrap.tsv", sep="\t", index=False)
+    overall = rows.groupby(["T", "method"]).network_aupr.agg(["count", "mean", "std"]).reset_index()
+    overall.to_csv(out / "overall_summary.tsv", sep="\t", index=False)
+    overall_paired = []
+    rng_overall = np.random.default_rng(20261008)
+    for length in (25, 41):
+        wide = rows[rows["T"].eq(length)].pivot(index="seed", columns="method", values="network_aupr")
+        for method in ("EDISON", "GENIE3", "GRNBoost2"):
+            difference = (wide["DiSCGRN"] - wide[method]).to_numpy()
+            draws = difference[rng_overall.integers(0, len(difference), (5000, len(difference)))].mean(axis=1)
+            low, high = np.quantile(draws, [0.025, 0.975])
+            overall_paired.append({
+                "T": length, "comparison": f"DiSCGRN_vs_{method}",
+                "n_systems": len(difference), "mean_difference": difference.mean(),
+                "ci_low": low, "ci_high": high,
+            })
+    overall_result = pd.DataFrame(overall_paired)
+    overall_result.to_csv(out / "overall_paired_bootstrap.tsv", sep="\t", index=False)
+    print(summary.to_string(index=False))
+    print(result.to_string(index=False))
+    print(overall.to_string(index=False))
+    print(overall_result.to_string(index=False))
+
+
+if __name__ == "__main__":
+    main()

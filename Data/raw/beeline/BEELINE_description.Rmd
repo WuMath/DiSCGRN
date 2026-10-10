@@ -1,0 +1,45 @@
+---
+title: "BEELINE datasets description"
+output: html_document
+date: '2022-01-13'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Dataset description
+
+**BEELINE data sets**
+
+
+## Description
+
+Over 400 simulated datasets (across six synthetic networks and four curated Boolean models) originally used for benchmarking algorithms for gene regulatory network inference.
+
+### Datasets from synthetic networks
+Contains 6 synthetic networks: dyn-BF (Bifurcating), dyn-BFC (Bifurcating Converging), dyn-CY (Cycle), dyn-LI (Linear), dyn-LL (Linear Long) and dyn-TF (Trifurcating).
+
+To simulate the data for each network a BoolODE approach (see Sources) was used. For each gene in a GRN, BoolODE requires a Boolean function that specifies how that gene’s regulators combine to control its state. Each Boolean function was represented as a truth table, which was converted into a nonlinear ordinary differential equation (ODE). This approach provides a reliable method to capture the logical relationships among the regulators precisely in the components of the ODE. Noise terms were added to make the equation stochastic. For each network, BoolODE was applied by sampling ODE parameters ten times and generating 5,000 simulations per parameter set. Five datasets were created per parameter set, one each with 100, 200, 500, 2,000 and 5,000 cells by sampling one cell per simulation, to obtain 50 different expression datasets.
+
+### Datasets from synthetic networks
+Contains four published Boolean models: mammalian cortical area development (mCAD), ventral spinal cord (VSC), hematopoietic stem cell (HSC) differentiation and gonadal sex determination (GSD).
+
+BoolODE was used to create ten different datasets with 2,000 cells for each model. For each dataset, one version was generated with a dropout rate of q = 50 and another with a rate of q = 70.
+
+### Ground Truth
+
+An edge weight of +1 represents activation, -1 represents inhibition.
+
+## Sources 
+
+Pratapa, A., Jalihal, A.P., Law, J.N. et al. Benchmarking algorithms for gene regulatory network inference from single-cell transcriptomic data. Nat Methods 17, 147–154 (2020). https://doi.org/10.1038/s41592-019-0690-6
+Data available at https://zenodo.org/record/3701939
+
+### Examples
+
+
+```{r}
+# use file BEELINE_example.R to load the data and run experiments.
+
+```
